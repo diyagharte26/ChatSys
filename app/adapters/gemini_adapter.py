@@ -76,11 +76,11 @@ class GeminiAdapter(BaseLLMAdapter):
         try:
             # Extract content from Gemini response
             candidates = response.get("candidates", [])
-            if not candidates:
+            if not candidates or len(candidates) == 0:
                 content = "No response generated"
             else:
                 parts = candidates[0].get("content", {}).get("parts", [])
-                content = parts[0].get("text", "") if parts else "No content"
+                content = parts[0].get("text", "") if parts and len(parts) > 0 else "No content"
             
             return {
                 "choices": [

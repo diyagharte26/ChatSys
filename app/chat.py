@@ -22,28 +22,30 @@ async def process_chat_request(user_id: int, request: ChatRequest) -> ChatRespon
     if request.temperature is not None:
         llm_config["temperature"] = request.temperature
     
+    # Validate messages before accessing
+    if not request.messages or len(request.messages) == 0:
+        raise ValueError("The messages list is empty.")
+
+    # Convert messages
+    messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+
     # Generate session ID
     session_id = uuid.uuid4().hex
-    
-    # Get appropriate adapter
+
+    # Get adapter and configure
     adapter = get_adapter(llm_config["provider"])
-    
-    # Initialize the adapter with config
     adapter.configure(
         api_key=llm_config["api_key"],
         model=llm_config["model"],
         temperature=llm_config["temperature"]
     )
-    
+
     # Get agent
     agent = get_agent(adapter)
-    
-    # Convert messages to format expected by agent
-    messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
-    
+
     # Process with agent
     agent_response = await agent.process_messages(messages)
-    
+
     # Convert to OpenAI format
     openai_response = convert_to_openai_format(
         session_id=session_id,
@@ -51,8 +53,8 @@ async def process_chat_request(user_id: int, request: ChatRequest) -> ChatRespon
         agent_response=agent_response,
         request_messages=messages
     )
-    
-    # Save session to database
+
+    # Save session
     await DatabaseManager.save_session(
         session_id=session_id,
         user_id=user_id,
@@ -60,8 +62,9 @@ async def process_chat_request(user_id: int, request: ChatRequest) -> ChatRespon
         response=openai_response.dict(),
         tools_used=agent_response.tools_used
     )
-    
+
     return openai_response
+
 
 def create_error_response(error_message: str, session_id: str = None) -> ChatResponse:
     """Create error response in OpenAI format"""

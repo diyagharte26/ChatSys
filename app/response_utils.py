@@ -94,32 +94,57 @@ def format_error_response(error_message: str, session_id: str = None) -> ChatRes
     )
 
 def extract_content_from_llm_response(response: Dict[str, Any]) -> str:
-    """Extract content from various LLM response formats"""
+    """Extract content from various LLM response formats in a safe manner."""
     
-    # OpenAI format
-    if "choices" in response:
-        choices = response["choices"]
+    try:
+        # OpenAI / Groq / Mistral / OpenRouter format
+        choices = response.get("choices", [])
         if choices and len(choices) > 0:
             message = choices[0].get("message", {})
-            return message.get("content", "")
-    
-    # Direct content
-    if "content" in response:
-        return response["content"]
-    
-    # Anthropic format
-    if "completion" in response:
-        return response["completion"]
-    
-    # Gemini format
-    if "candidates" in response:
-        candidates = response["candidates"]
+            content = message.get("content")
+            if content:
+                return content
+
+        # Anthropic format (new API, e.g., Claude 3)
+        anthropic_content_list = response.get("content", [])
+        if isinstance(anthropic_content_list, list) and len(anthropic_content_list) > 0:
+            text_content = []
+            for block in anthropic_content_list:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text_content.append(block.get("text", ""))
+            if text_content:
+                return "".join(text_content)
+
+        # Anthropic format (legacy API)
+        completion = response.get("completion")
+        if completion:
+            return completion
+
+        # Gemini format
+        candidates = response.get("candidates", [])
         if candidates and len(candidates) > 0:
-            content = candidates[0].get("content", {})
-            parts = content.get("parts", [])
-            if parts and len(parts) > 0:
-                return parts[0].get("text", "")
-    
+            candidate = candidates[0]
+            if isinstance(candidate, dict):
+                content_data = candidate.get("content", {})
+                if isinstance(content_data, dict):
+                    parts = content_data.get("parts", [])
+                    if parts and len(parts) > 0:
+                        part = parts[0]
+                        if isinstance(part, dict):
+                            text = part.get("text")
+                            if text:
+                                return text
+        
+        # Direct content key (as a fallback if other structures fail)
+        direct_content = response.get("content")
+        if isinstance(direct_content, str):
+            return direct_content
+
+    except Exception:
+        # A final catch-all, though the above logic should prevent most errors.
+        pass
+
+    # If no content could be extracted, return the raw response for debugging.
     return str(response)
 
 def calculate_usage_stats(request_messages: List[Dict], response_content: str) -> ChatUsage:
