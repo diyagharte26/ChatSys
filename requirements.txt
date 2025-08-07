@@ -15,7 +15,7 @@ langchain-community==0.0.34
 
 # Adapters for LangChain LLMs
 langchain-openai==0.1.6
-langchain-google-genai==0.0.10
+langchain-google-genai
 
 # Tokenizer (for counting tokens)
 tiktoken==0.5.2

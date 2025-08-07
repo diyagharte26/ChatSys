@@ -144,3 +144,4 @@ class DatabaseManager:
             result["tools_used"] = json.loads(result["tools_used"]) if result["tools_used"] else []
         
         return result
+

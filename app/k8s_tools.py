@@ -7,10 +7,10 @@ import yaml
 import base64 
 
 # Load Kubernetes configuration.
-# This will load the configuration from the default location (~/.kube/config.merged)
+# This will load the configuration from the default location (~/.kube/config)
 # or from the in-cluster service account environment.
 
-kube_config_path = os.path.expanduser("~/.kube/config.merged")
+kube_config_path = os.path.expanduser("~/.kube/config")
 try:
     config.load_kube_config(config_file=kube_config_path)
 except config.ConfigException:

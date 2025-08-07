@@ -2,7 +2,7 @@ from typing import Dict, Any, List
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, SystemMessage
-from k8s_tools import k8s_tools
+from .k8s_tools import k8s_tools
 from .models import AgentResponse
 
 class KubeSageAgent:
